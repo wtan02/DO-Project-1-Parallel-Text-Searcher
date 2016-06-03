@@ -1,0 +1,115 @@
+
+/////////////////////////////////////////////////////////////////////////////
+// Client.cpp - Demonstrate Parallel Text Search Component		   //
+//			    CSE775 Distributed Object                      //
+// Language:    Visual C++, Visual Studio 2015                             //
+// Platform:    Thinkpad w541, Core i7, Ubuntu 14.04	                   //
+// Application: CSE775 Project#1, Parallel Text Search Component           //
+// Author:      Wenchang Tan, MS of CE, Syracuse University                //
+//              wtan02@syr.edu                                             //
+/////////////////////////////////////////////////////////////////////////////
+/*
+* Package Operations:
+* ===================
+* Provides demostration for parallel text search of a particular set of patterns 
+* and a keyword in a Directory using DLL on Linux platform
+*
+* Required Files:
+* ===============
+* FileMgr.dll IFileMgr.h 
+* CommandlineParser.h CommandlineParser.cpp 
+* TextSearch.dll ITextSearch.h
+*
+* Maintanence History:
+* ====================
+* ver 1.0 - 21 Mar 2016
+* - first release
+*/
+
+
+#include "../FileMgr/IFileMgr.h"			
+#include "../TextSearch/ITextSearch.h"
+#include "../TextSearch/TextSearch.cpp"	
+#include "../CommandlineParser/CommandLineParser.h"
+
+#include <iostream>
+#include <chrono>
+#include <thread>
+
+#define FileSearchEnd "FileSearchEnd"
+#define TextSearchEnd "TextSearchEnd"
+
+
+int main(int argc, char *argv[])
+{
+    std::cout << "\n  Demonstrating Project #1 - Parallel Text Search Component with C++ Client";
+    std::cout << "\n ==========================================================================\n";
+    try
+    {       
+        IFileMgr* pFileMgr = IFileMgr::createInstance();					
+        ITextSearch* pTextSearcher = ITextSearch::createInstance();				
+
+        //------------<Parse commandline arguments>------------
+
+        CommandLineParser cmdLineParser;
+        cmdLineParser.parseCommandLine(argc, argv);
+        std::string path = cmdLineParser.getPath();
+        std::string wantedtext = cmdLineParser.getwantedtext();
+        std::vector<std::string> filePatterns = cmdLineParser.getPatterns();
+        int threadNum = cmdLineParser.getThreadNum();
+
+
+        //------------<set path and patterns to search files>------------
+        for (std::string pattern : filePatterns)
+        {
+            pFileMgr->addPattern(pattern);
+        }
+        pFileMgr->searchFiles(path);
+        pTextSearcher->SetThreadNum(threadNum);
+
+        //------------<print out patterns and path>------------
+        std::cout << "\n  " <<threadNum << " threads are working in TextSearcher COM \n";
+        std::cout << "\n  File patterns: ";
+        for (std::string pattern : filePatterns)
+        {
+            std::cout << pattern + ", ";
+        }
+        std::cout << "  Path: " + path + "\n\n";
+        std::cout << "  File Search Result: \n";
+        std::cout << "  -------------------";
+        //------------<Get file search result from FileMgr>------------
+        while (true)
+        {
+            std::string returnFile = pFileMgr->get();
+            pTextSearcher->put(returnFile);
+            if (returnFile == FileSearchEnd) {
+               break;
+            }
+            std::cout << "\n  " << returnFile<< std::endl;
+        }
+
+        //------------<Search text from file search result>------------
+        std::cout << "\n  Search text \"" + wantedtext + "\" results from above filelist: \n\n";
+
+        pTextSearcher->searchText(wantedtext);
+        std::cout << "  Searching......\n\n";
+        std::cout << "  Text \"" + wantedtext + "\" Search Result: \n";
+        std::cout << "  ------------------- ";
+        //------------<Get text search result from TextSearcher>------------
+        while (true)
+        {
+            std::string resultFile = pTextSearcher->get();
+            if (resultFile == TextSearchEnd) {
+                break;
+            }
+            std::cout << "\n  " << resultFile;
+        }
+    }
+    catch (std::exception& ex)
+    {
+        std::cout << "\n  " << ex.what() << "\n\n";
+        return 1;
+    }
+    std::cout << "\n\n";
+
+}
