@@ -1,0 +1,37 @@
+// FileMgrCom.idl : IDL source for FileMgrCom
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (FileMgrCom.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(BD6E3AE1-7048-492C-A4D2-FFCBA7BA647D),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFileMgr : IDispatch{
+	[id(1)] HRESULT addPattern([in] BSTR pattern);
+	[id(2)] HRESULT searchFiles([in] BSTR path_);
+	[id(3)] HRESULT get([out, retval] BSTR* file);
+};
+[
+	uuid(0E5BC7C4-0870-4AD3-9C84-51BEA405EFFE),
+	version(1.0),
+]
+library FileMgrComLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(50EC8BA4-AC1F-4EFA-9B65-90E33854BC65)		
+	]
+	coclass FileMgr
+	{
+		[default] interface IFileMgr;
+	};
+};
+
